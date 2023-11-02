@@ -1,9 +1,21 @@
 import { query, update, Canister, text, Record, StableBTreeMap, Ok, None, Some, Err, Vec, Result, nat64, ic, Opt, Variant } from 'azle';
+//TODO : npm install uuid
 import { v4 as uuidv4 } from 'uuid';
 
 /**
  * This type represents a message that can be listed on a board.
  */
+
+//below we create a Model to represent how a message is  Saved, note we save only 3 fields/Payload
+//additional fields such createdTime, updatedTime are added automatically
+const MessagePayload = Record({
+    title: text,
+    body: text,
+    attachmentURL: text
+});
+
+
+//Below we create a Model to represent How a message is Retrieved
 const Message = Record({
     id: text,
     title: text,
@@ -13,12 +25,8 @@ const Message = Record({
     updatedAt: Opt(nat64)
 });
 
-const MessagePayload = Record({
-    title: text,
-    body: text,
-    attachmentURL: text
-});
-
+//In the event there is an Error, we create a model to represent 2 possible outcomes
+//one could be Not Found, the other is Invalid Payload provided
 const Error = Variant({
     NotFound: text,
     InvalidPayload: text,
@@ -35,6 +43,7 @@ const Error = Variant({
  * - the key of map is a `messageId`
  * - the value in this map is a message itself `Message` that is related to a given key (`messageId`)
  * 
+ * SPecify our messageStorage  Object 
  * Constructor values:
  * 1) text - the type of the key in the map
  * 2) Message - the type of the value in the map.
@@ -43,11 +52,23 @@ const Error = Variant({
 const messagesStorage = StableBTreeMap(text, Message, 0);
 
 export default Canister({
+
+    //Below we add the Message to mesageStorage
+    addMessage: update([MessagePayload], Result(Message, Error), (payload) => {
+        //generate uuid, create and update time and our payload
+        const message = { id: uuidv4(), createdAt: ic.time(), updatedAt: None, ...payload };
+        //Insert the message
+        messagesStorage.insert(message.id, message);
+        //return an OK with the message you saved
+        return Ok(message);
+    }),
+
+    //Below we get all messages from the storage
     getMessages: query([], Result(Vec(Message), Error), () => {
         return Ok(messagesStorage.values());
     }),
 
-
+    //we get specific message from the message storage, we provide the uuid
     getMessage: query([text], Result(Message, Error), (id) => {
         const messageOpt = messagesStorage.get(id);
         if ("None" in messageOpt) {
@@ -56,14 +77,7 @@ export default Canister({
         return Ok(messageOpt.Some);
     }),
 
-
-    addMessage: update([MessagePayload], Result(Message, Error), (payload) => {
-        const message = { id: uuidv4(), createdAt: ic.time(), updatedAt: None, ...payload };
-        messagesStorage.insert(message.id, message);
-        return Ok(message);
-    }),
-
-
+    //Update a message already in the messageStorage, we provide a uuid
     updateMessage: update([text, MessagePayload], Result(Message, Error), (id, payload) => {
         const messageOpt = messagesStorage.get(id);
         if ("None" in messageOpt) {
@@ -75,7 +89,7 @@ export default Canister({
         return Ok(updatedMessage);
     }),
 
-    
+    //delete a message from the messageStorage, we provide a uuid to remove
     deleteMessage: update([text], Result(Message, Error), (id) => {
         const deletedMessage = messagesStorage.remove(id);
         if ("None" in deletedMessage) {
@@ -85,7 +99,8 @@ export default Canister({
     })
 });
 
-// a workaround to make uuid package work with Azle
+// NB: Below is a workaround to make uuid package work with Azle
+//This function must be placed here. to enable uuid work in this code
 globalThis.crypto = {
     // @ts-ignore
     getRandomValues: () => {
@@ -98,3 +113,6 @@ globalThis.crypto = {
         return array;
     }
 };
+
+//Student Todo: 
+//Modify above code to save different fields other than attachmentUrl, title and body

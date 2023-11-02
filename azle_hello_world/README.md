@@ -1,47 +1,44 @@
-# azle_hello_world
+To start please run below command
+`
+ npm install uuid
+`
 
-Welcome to your first Azle project! This example project will help you to deploy your first canister (application) to the Internet Computer (IC) decentralized cloud. It is a simple getter/setter canister. You can always refer to [The Azle Book](https://demergent-labs.github.io/azle/) for more in-depth documentation.
+Code Expanations
+Below code specifies the Model of the Record to be Saved, we save only 3 items.
 
-`dfx` is the tool you will use to interact with the IC locally and on mainnet. If you don't already have it installed:
+`
+const MessagePayload = Record({
+    title: text,
+    body: text,
+    attachmentURL: text
+});
+`
+When the message is Saved we also save additional fields such as created time etc.
+Below code shows how a Record will be retrieved.
 
-```bash
-npm run dfx_install
-```
+`
+const Message = Record({
+    id: text,
+    title: text,
+    body: text,
+    attachmentURL: text,
+    createdAt: nat64,
+    updatedAt: Opt(nat64)
+});
+`
+Incase of an Error, you can get two scenarios namely; NotFound or Invalid Payload
+We define a model to represent that in below Code.
 
-Next you will want to start a replica, which is a local instance of the IC that you can deploy your canisters to:
+`
+const Error = Variant({
+    NotFound: text,
+    InvalidPayload: text,
+});
+`
 
-```bash
-npm run replica_start
-```
 
-If you ever want to stop the replica:
 
-```bash
-npm run replica_stop
-```
 
-Now you can deploy your canister locally:
 
-```bash
-npm install
-npm run canister_deploy_local
-```
 
-To call the methods on your canister:
 
-```bash
-npm run canister_call_get_message
-npm run canister_call_set_message
-```
-
-If you run the above commands and then call `npm run canister_call_get_message` you should see:
-
-```bash
-("Hello world!")
-```
-
-Assuming you have [created a cycles wallet](https://internetcomputer.org/docs/current/developer-docs/quickstart/network-quickstart) and funded it with cycles, you can deploy to mainnet like this:
-
-```bash
-npm run canister_deploy_mainnet
-```

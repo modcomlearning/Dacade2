@@ -12,6 +12,7 @@ const MessagePayload = Record({
     body: text,
     attachmentURL: text
 });
+
 `
 When the message is Saved we also save additional fields such as created time etc.
 Below code shows how a Record will be retrieved.
@@ -35,6 +36,8 @@ const Error = Variant({
     InvalidPayload: text,
 });
 `
+
+
 
 
 
